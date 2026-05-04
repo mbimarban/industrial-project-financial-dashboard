@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Financial Control Dashboard — Industrial Projects Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+/* ═══════════════════════════════ RESET & VARS ═════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0d1f3c;
+  --blue:#1d4ed8;--blue2:#2563eb;--blue-lt:#eff6ff;--blue-bd:#bfdbfe;
+  --green:#15803d;--green2:#16a34a;--green-lt:#f0fdf4;--green-bd:#bbf7d0;
+  --amber:#92400e;--amber2:#b45309;--amber-lt:#fffbeb;--amber-bd:#fde68a;
+  --red:#991b1b;--red2:#dc2626;--red-lt:#fef2f2;--red-bd:#fecaca;
+  --bg:#eef0f5;--surface:#fff;--surface2:#f8fafc;
+  --border:#e2e8f0;--border2:#f1f5f9;
+  --text:#0f172a;--text2:#334155;--text3:#64748b;--text4:#94a3b8;
+  --sh1:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 14px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --r:10px;--r2:6px;--f:'Inter',sans-serif;
+}
+html{font-size:14px}
+body{font-family:var(--f);background:var(--bg);color:var(--text);
+  min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* ═══════════════════════════════ ANIMATIONS ════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.fade{opacity:0;animation:fadeUp .38s ease forwards}
+.d1{animation-delay:.04s}.d2{animation-delay:.09s}.d3{animation-delay:.14s}
+.d4{animation-delay:.19s}.d5{animation-delay:.24s}.d6{animation-delay:.29s}
+
+/* ═══════════════════════════════ HEADER ════════════════════════════════ */
+.hdr{background:var(--navy);color:#fff;height:58px;padding:0 2.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:300;box-shadow:0 2px 16px rgba(0,0,0,.28)}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.hdr-icon{width:30px;height:30px;border-radius:7px;flex-shrink:0;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center}
+.hdr-icon svg{width:15px;height:15px;fill:#fff}
+.hdr-t h1{font-size:.86rem;font-weight:700;letter-spacing:-.012em}
+.hdr-t p{font-size:.6rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
+.hdr-r{display:flex;align-items:center;gap:16px}
+.hdr-stat .v{font-size:.88rem;font-weight:700;letter-spacing:-.015em;text-align:right}
+.hdr-stat .l{font-size:.58rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.08em;text-align:right;margin-top:1px}
+.hdr-div{width:1px;height:22px;background:rgba(255,255,255,.1)}
+.hdr-date{font-size:.6rem;color:rgba(255,255,255,.3);letter-spacing:.03em}
+
+/* ═══════════════════════════════ TAB NAV ════════════════════════════════ */
+.tab-nav{background:var(--surface);border-bottom:2px solid var(--border2);
+  position:sticky;top:58px;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.tab-nav-inner{max-width:1800px;margin:0 auto;padding:0 2.5rem;display:flex;align-items:flex-end}
+.tab-btn{padding:0 22px;height:46px;display:flex;align-items:center;gap:7px;
+  font-family:var(--f);font-size:.74rem;font-weight:500;color:var(--text3);
+  cursor:pointer;border:none;background:transparent;
+  border-bottom:3px solid transparent;margin-bottom:-2px;
+  transition:color .15s,border-color .15s,background .15s;
+  white-space:nowrap;letter-spacing:-.01em;border-radius:var(--r2) var(--r2) 0 0}
+.tab-btn svg{width:13px;height:13px;opacity:.55;transition:opacity .15s;flex-shrink:0}
+.tab-btn:hover{color:var(--text2);background:var(--surface2)}
+.tab-btn:hover svg{opacity:.75}
+.tab-btn.active{color:var(--blue2);border-bottom-color:var(--blue2);font-weight:700;background:var(--blue-lt)}
+.tab-btn.active svg{opacity:1;color:var(--blue2)}
+
+/* ═══════════════════════════════ TAB CONTENT ════════════════════════════ */
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeUp .22s ease}
+.wrap{padding:1.6rem 2.5rem 4rem;max-width:1800px;margin:0 auto}
+.section-label{font-size:.59rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--text4);margin-bottom:.7rem;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border2)}
+
+/* ═══════════════════════════════ DECISION PANEL ════════════════════════ */
+.decision{background:var(--navy);border-radius:var(--r);padding:20px 24px;color:#fff;
+  display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;
+  margin-bottom:.9rem;box-shadow:0 4px 20px rgba(13,31,60,.22)}
+.dec-l{flex:1;min-width:200px}
+.dec-tag{display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);
+  border-radius:3px;padding:2px 9px;font-size:.58rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.dec-pulse{width:5px;height:5px;border-radius:50%;background:#fbbf24;flex-shrink:0;animation:pulse 2s ease-in-out infinite}
+
+/* ── 3-layer headline structure ── */
+.dec-headline-block{margin-bottom:10px}
+/* WHAT */
+#main-headline{font-size:1.08rem;font-weight:700;letter-spacing:-.022em;line-height:1.3;color:#fff;margin-bottom:3px}
+/* SO WHAT */
+#insight-text{font-size:.78rem;line-height:1.55;opacity:.68;font-weight:400;margin-bottom:0}
+/* NOW WHAT */
+#headline-action{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-top:9px;
+  background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);
+  border-radius:4px;padding:5px 10px;
+  font-size:.75rem;font-weight:500;color:#fde68a;line-height:1.45;
+  max-width:760px;
+}
+#headline-action::before{content:'→';font-weight:700;font-size:.8rem;flex-shrink:0}
+
+.dec-r{display:flex;gap:10px;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.dec-k{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r2);padding:12px 17px;text-align:center;min-width:108px}
+.dec-k .dv{font-size:1.4rem;font-weight:800;letter-spacing:-.04em;display:block;
+  line-height:1;margin-bottom:3px;font-variant-numeric:tabular-nums}
+.dec-k .dl{font-size:.58rem;opacity:.5;text-transform:uppercase;letter-spacing:.09em;font-weight:500}
+.dec-k.risk .dv{color:#fca5a5}.dec-k.warn .dv{color:#fde68a}
+
+/* ═══════════════════════════════ EXEC SUMMARY STRIP ═══════════════════ */
+.exec-summary{background:var(--surface);border:1px solid var(--border2);
+  border-left:3px solid var(--blue2);border-radius:var(--r);
+  padding:13px 18px;margin-bottom:.9rem;box-shadow:var(--sh1);
+  display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.es-label{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text4);white-space:nowrap;padding-top:2px;flex-shrink:0;min-width:100px}
+.es-bullets{display:flex;gap:0;flex:1;flex-wrap:wrap}
+.es-bullet{display:flex;align-items:flex-start;gap:7px;font-size:.75rem;color:var(--text2);
+  line-height:1.55;flex:1;min-width:180px;padding:0 16px 0 0;
+  border-right:1px solid var(--border2);margin-right:16px}
+.es-bullet:last-child{border-right:none;margin-right:0;padding-right:0}
+.es-ico{width:17px;height:17px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;margin-top:1px}
+.es-ico.r{background:var(--red-lt)}.es-ico.a{background:var(--amber-lt)}.es-ico.g{background:var(--green-lt)}
+.es-ico svg{width:9px;height:9px}
+.es-strong{font-weight:600;color:var(--text);display:block;margin-bottom:1px}
+
+/* ═══════════════════════════════ KPI GRIDS ════════════════════════════ */
+.kpi-primary{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:.75rem}
+.kpi-secondary{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:.9rem}
+.kpi-grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:.8rem;margin-bottom:.9rem}
+
+.kpi{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  box-shadow:var(--sh1);position:relative;overflow:hidden;
+  transition:box-shadow .18s,transform .18s;cursor:default}
+.kpi:hover{box-shadow:var(--sh2);transform:translateY(-1px)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.kpi.cb::after{background:var(--blue2)}.kpi.cg::after{background:var(--green2)}
+.kpi.ca::after{background:var(--amber2)}.kpi.cr::after{background:var(--red2)}
+.kpi.cs::after{background:#64748b}
+
+/* ── Critical KPI highlight — bad state draws the eye immediately ── */
+.kpi.critical{
+  background:#fef2f2;
+  border-color:#fecaca;
+}
+.kpi.critical .kpi-lbl{color:#b91c1c}
+.kpi.warning{
+  background:#fffbeb;
+  border-color:#fde68a;
+}
+.kpi.warning .kpi-lbl{color:#92400e}
+
+/* Large primary */
+.kpi-primary .kpi{padding:20px 18px 16px}
+.kpi-primary .kpi-lbl{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text4);margin-bottom:10px}
+.kpi-primary .kpi-val{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;line-height:1;margin-bottom:5px;color:var(--text);font-variant-numeric:tabular-nums}
+.kpi-primary .kpi-sub{font-size:.62rem;color:var(--text4)}
+
+/* Small secondary */
+.kpi-secondary .kpi{padding:13px 14px 11px}
+.kpi-secondary .kpi-lbl{font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text4);margin-bottom:6px}
+.kpi-secondary .kpi-val{font-size:1.05rem;font-weight:700;letter-spacing:-.018em;line-height:1;margin-bottom:3px;color:var(--text);font-variant-numeric:tabular-nums}
+.kpi-secondary .kpi-sub{font-size:.6rem;color:var(--text4)}
+
+/* Cash tab 5-col */
+.kpi-grid-5 .kpi{padding:14px 13px 11px}
+.kpi-grid-5 .kpi-lbl{font-size:.57rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--text4);margin-bottom:7px}
+.kpi-grid-5 .kpi-val{font-size:1.15rem;font-weight:800;letter-spacing:-.018em;line-height:1;margin-bottom:3px;color:var(--text);font-variant-numeric:tabular-nums}
+.kpi-grid-5 .kpi-sub{font-size:.59rem;color:var(--text4)}
+
+/* ═══════════════════════════════ RECOMMENDED ACTIONS ═════════════════ */
+.actions-card{background:var(--surface);border:1px solid var(--border2);
+  border-radius:var(--r);box-shadow:var(--sh1);padding:15px 20px;margin-bottom:.9rem;
+  display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.actions-label{font-size:.58rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--text4);white-space:nowrap;padding-top:2px;
+  flex-shrink:0;min-width:130px}
+.actions-inner{display:flex;gap:0;flex:1;flex-wrap:wrap}
+.action-item{display:flex;align-items:flex-start;gap:8px;flex:1;min-width:200px;
+  padding:0 16px 0 0;border-right:1px solid var(--border2);margin-right:16px}
+.action-item:last-child{border-right:none;margin-right:0;padding-right:0}
+.action-num{width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;
+  font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.action-text{font-size:.75rem;line-height:1.55;color:var(--text2)}
+.action-text strong{color:var(--text);font-weight:600;display:block;margin-bottom:1px}
+
+/* ═══════════════════════════════ CHART CARDS ════════════════════════════ */
+.row2a{display:grid;grid-template-columns:2.2fr 1fr;gap:.9rem;margin-bottom:.9rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-bottom:.9rem}
+.mb9{margin-bottom:.9rem}
+
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  padding:18px 16px 12px;box-shadow:var(--sh1);transition:box-shadow .18s}
+.card:hover{box-shadow:var(--sh2)}
+.ch-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px}
+.ch-t{font-size:.82rem;font-weight:600;color:var(--text);letter-spacing:-.012em;line-height:1.3}
+.ch-s{font-size:.66rem;color:var(--text4);margin-top:2px}
+
+.pill{padding:2px 8px;border-radius:3px;font-size:.58rem;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.pill.r{background:var(--red-lt);color:var(--red);border:1px solid var(--red-bd)}
+.pill.g{background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)}
+.pill.b{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd)}
+.pill.a{background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-bd)}
+
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border2)}
+.leg-i{display:flex;align-items:center;gap:5px;font-size:.63rem;color:var(--text3)}
+.leg-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* ═══════════════════════════════ INSIGHT CARD ═══════════════════════════ */
+.insight-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  padding:14px 16px;box-shadow:var(--sh1);display:flex;align-items:flex-start;gap:11px}
+.ic-icon{width:30px;height:30px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.ic-icon.r{background:var(--red-lt)}.ic-icon.a{background:var(--amber-lt)}
+.ic-icon.g{background:var(--green-lt)}.ic-icon.b{background:var(--blue-lt)}
+.ic-icon svg{width:13px;height:13px}
+.ic-body .ic-label{font-size:.59rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text4);margin-bottom:3px}
+.ic-body .ic-text{font-size:.77rem;color:var(--text2);line-height:1.6}
+.ic-body .ic-text strong{color:var(--text);font-weight:600}
+
+/* ═══════════════════════════════ SCENARIO ═══════════════════════════════ */
+/* Scenario insight box — top of tab */
+.sc-insight-box{background:linear-gradient(118deg,#0d1f3c 0%,#1e3a8a 100%);
+  border-radius:var(--r);color:#fff;padding:20px 26px;margin-bottom:.9rem;
+  box-shadow:0 4px 20px rgba(13,31,60,.22)}
+.sc-insight-box .si-tag{display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15);
+  border-radius:3px;padding:2px 9px;font-size:.58rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+/* One-number takeaway — large display */
+.sc-insight-box .si-sentence{font-size:.88rem;font-weight:400;line-height:1.7;opacity:.92;max-width:900px}
+.sc-insight-box .si-sentence strong{font-weight:700;opacity:1}
+
+.scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem;margin-bottom:.9rem}
+.scenario-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  padding:22px 20px 18px;box-shadow:var(--sh1);position:relative;overflow:hidden}
+.scenario-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.scenario-card.base::after{background:var(--blue2)}
+.scenario-card.risk::after{background:var(--red2)}
+.scenario-card.recovery::after{background:var(--green2)}
+.sc-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;
+  font-size:.59rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.sc-badge.base{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd)}
+.sc-badge.risk{background:var(--red-lt);color:var(--red);border:1px solid var(--red-bd)}
+.sc-badge.recovery{background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)}
+.sc-title{font-size:.88rem;font-weight:700;letter-spacing:-.015em;margin-bottom:3px;color:var(--text)}
+.sc-subtitle{font-size:.7rem;color:var(--text3);line-height:1.5;margin-bottom:14px}
+
+/* Dominant margin hero */
+.sc-margin-hero{display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r2);
+  padding:14px 16px;margin-bottom:12px}
+.sc-margin-hero .mh-label{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text4)}
+.sc-margin-hero .mh-value{font-size:2rem;font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.sc-margin-hero .mh-delta{font-size:.72rem;font-weight:600;padding:2px 7px;border-radius:3px;margin-top:2px;display:inline-block}
+.sc-margin-hero .mh-delta.pos{background:var(--green-lt);color:var(--green)}
+.sc-margin-hero .mh-delta.neg{background:var(--red-lt);color:var(--red)}
+.sc-margin-hero .mh-delta.neu{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+
+.sc-metric{display:flex;justify-content:space-between;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--border2)}
+.sc-metric:last-child{border-bottom:none}
+.sc-metric .sm-label{font-size:.67rem;color:var(--text3)}
+.sc-metric .sm-val{font-size:.82rem;font-weight:600;letter-spacing:-.012em;font-variant-numeric:tabular-nums}
+.sc-metric .sm-val.pos{color:var(--green2)}.sc-metric .sm-val.neg{color:var(--red2)}.sc-metric .sm-val.warn{color:var(--amber2)}
+.sc-assumption{margin-top:12px;padding:9px 11px;background:var(--surface2);border-radius:var(--r2);border:1px solid var(--border2)}
+.sc-assumption p{font-size:.67rem;color:var(--text3);line-height:1.6}
+.sc-assumption strong{color:var(--text2);font-weight:500}
+
+/* ═══════════════════════════════ TABLES ════════════════════════════════ */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);box-shadow:var(--sh1);overflow:hidden}
+.tbl-hdr{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tbl-hdr h3{font-size:.76rem;font-weight:600;color:var(--text)}
+.tbl-cnt{font-size:.61rem;color:var(--text4);background:var(--surface2);border:1px solid var(--border);padding:2px 9px;border-radius:3px;font-weight:500}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--surface2);border-bottom:2px solid var(--border)}
+th{padding:7px 11px;white-space:nowrap;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text4);text-align:left}
+th.nr{text-align:right}
+td{padding:7px 11px;border-bottom:1px solid var(--border2);color:var(--text2);white-space:nowrap;font-size:.73rem;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+tr.rr td{background:#fff5f5}tr.rr:hover td{background:#fee2e2}
+tr.ra td{background:#fffef5}tr.ra:hover td{background:#fef9c3}
+td.nr{text-align:right;font-variant-numeric:tabular-nums;font-size:.72rem;letter-spacing:-.01em}
+td.pid{font-size:.65rem;color:var(--text4);font-weight:500;letter-spacing:.03em}
+td.pname{font-weight:600;color:var(--text);max-width:170px;overflow:hidden;text-overflow:ellipsis}
+.sbg{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;
+  font-size:.57rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.sbg::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor}
+.sbg.active{background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)}
+.sbg.delayed{background:var(--red-lt);color:var(--red);border:1px solid var(--red-bd)}
+.sbg.completed{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-bd)}
+.mpill{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.69rem;font-weight:600;font-variant-numeric:tabular-nums}
+.mpill.pos{background:var(--green-lt);color:var(--green);border:1px solid var(--green-bd)}
+.mpill.neg{background:var(--red-lt);color:var(--red);border:1px solid var(--red-bd)}
+
+/* ═══════════════════════════════ FOOTER ════════════════════════════════ */
+.footer{text-align:center;padding:1.25rem 2rem;border-top:1px solid var(--border);
+  background:var(--surface);margin-top:1.25rem;font-size:.61rem;color:var(--text4);letter-spacing:.02em}
+
+/* ═══════════════════════════════ RESPONSIVE ════════════════════════════ */
+@media(max-width:1400px){
+  .kpi-primary,.kpi-secondary,.kpi-grid-5{grid-template-columns:repeat(2,1fr)}
+  .row2a,.row2{grid-template-columns:1fr}
+  .scenario-grid{grid-template-columns:1fr}
+}
+@media(max-width:900px){
+  .hdr,.wrap{padding-left:1.25rem;padding-right:1.25rem}
+  .tab-nav-inner{padding:0 1.25rem}
+  .decision{flex-direction:column}.dec-r{width:100%}.dec-k{flex:1;min-width:0}
+  .es-bullets,.actions-inner{flex-direction:column}
+  .es-bullet,.action-item{border-right:none;margin-right:0;padding-right:0;
+    border-bottom:1px solid var(--border2);padding-bottom:8px;margin-bottom:8px}
+  .es-bullet:last-child,.action-item:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+  .hdr-date,.hdr-div:last-of-type{display:none}
+  .tab-btn{padding:0 12px;font-size:.7rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ────────────────────────────────────── -->
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-icon"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+    <div class="hdr-t"><h1>Financial Control Dashboard</h1><p>Industrial Projects Portfolio</p></div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-stat"><div class="v" id="h-cv">—</div><div class="l">Contract Value</div></div>
+    <div class="hdr-div"></div>
+    <div class="hdr-stat"><div class="v" id="h-np">—</div><div class="l">Projects</div></div>
+    <div class="hdr-div"></div>
+    <div class="hdr-date" id="h-date">—</div>
+  </div>
+</header>
+
+<!-- ─── TAB NAV ───────────────────────────────────── -->
+<nav class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="showTab('exec')" id="btn-exec">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+      Executive Summary
+    </button>
+    <button class="tab-btn" onclick="showTab('cost')" id="btn-cost">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,12 6,7 9,9 14,3"/></svg>
+      Cost &amp; Margin
+    </button>
+    <button class="tab-btn" onclick="showTab('cash')" id="btn-cash">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><path d="M8 5v3l2 2"/></svg>
+      Cash Flow
+    </button>
+    <button class="tab-btn" onclick="showTab('scenario')" id="btn-scenario">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13L6 8l3 3 5-7"/><circle cx="6" cy="8" r="1" fill="currentColor" stroke="none"/></svg>
+      Scenario Analysis
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 1 — EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════ -->
+<div class="tab-content active" id="tab-exec">
+<div class="wrap">
+
+  <!-- Decision Panel: WHAT → SO WHAT → NOW WHAT -->
+  <div class="decision fade d1">
+    <div class="dec-l">
+      <div class="dec-tag"><span class="dec-pulse"></span>Executive Intelligence</div>
+      <div class="dec-headline-block">
+        <!-- WHAT: the situation -->
+        <h2 id="main-headline">—</h2>
+        <!-- SO WHAT: the implication -->
+        <p id="insight-text">—</p>
+      </div>
+      <!-- NOW WHAT: the action -->
+      <p id="headline-action"></p>
+    </div>
+    <div class="dec-r">
+      <div class="dec-k risk"><span class="dv" id="d-or">—</span><span class="dl">Cost Overruns</span></div>
+      <div class="dec-k warn"><span class="dv" id="d-cg">—</span><span class="dl">Total Cash Gap</span></div>
+    </div>
+  </div>
+
+  <!-- Executive Summary bullets -->
+  <div class="exec-summary fade d2">
+    <div class="es-label">Executive<br>Summary</div>
+    <div style="flex:1">
+      <!-- Strategic sentence for the board — one-liner above the bullets -->
+      <p id="es-strategic" style="font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.5"></p>
+      <div class="es-bullets">
+      <div class="es-bullet">
+        <div class="es-ico r"><svg viewBox="0 0 12 12" fill="none"><path d="M6 2v4M6 8.5v.5" stroke="#991b1b" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div><span class="es-strong">Margin Pressure</span><span id="es-margin">—</span></div>
+      </div>
+      <div class="es-bullet">
+        <div class="es-ico a"><svg viewBox="0 0 12 12" fill="none"><path d="M2 10L6 2l4 8H2z" stroke="#92400e" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
+        <div><span class="es-strong">Overrun Exposure</span><span id="es-overrun">—</span></div>
+      </div>
+      <div class="es-bullet">
+        <div class="es-ico g"><svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4" stroke="#15803d" stroke-width="1.2"/><path d="M6 4v2l1.5 1.5" stroke="#15803d" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+        <div><span class="es-strong">Cash Collection Risk</span><span id="es-cash">—</span></div>
+      </div>
+      </div><!-- /es-bullets -->
+    </div><!-- /es-strategic wrapper -->
+  </div><!-- /exec-summary -->
+  <div class="section-label fade d2">Primary Indicators</div>
+  <div class="kpi-primary fade d3">
+    <div class="kpi cg"><div class="kpi-lbl">Portfolio Margin %</div><div class="kpi-val" id="k-mg">—</div><div class="kpi-sub">Contract vs. EAC blended</div></div>
+    <div class="kpi cr"><div class="kpi-lbl">Projects with Overrun</div><div class="kpi-val" id="k-or">—</div><div class="kpi-sub">Count / % of portfolio at risk</div></div>
+    <div class="kpi ca"><div class="kpi-lbl">Total Cash Gap</div><div class="kpi-val" id="k-tgap">—</div><div class="kpi-sub">Invoiced but not yet received</div></div>
+    <div class="kpi cg"><div class="kpi-lbl">Collection Rate</div><div class="kpi-val" id="k-cr">—</div><div class="kpi-sub">Cash In / Invoiced</div></div>
+  </div>
+
+  <!-- SECONDARY KPIs — 4 supporting -->
+  <div class="section-label fade d3">Supporting Metrics</div>
+  <div class="kpi-secondary fade d3">
+    <div class="kpi cb"><div class="kpi-lbl">Total Contract Value</div><div class="kpi-val" id="k-cv">—</div><div class="kpi-sub">Portfolio revenue</div></div>
+    <div class="kpi cs"><div class="kpi-lbl">Forecast Cost / EAC</div><div class="kpi-val" id="k-fc">—</div><div class="kpi-sub">Estimate at completion</div></div>
+    <div class="kpi cb"><div class="kpi-lbl">Actual Cost</div><div class="kpi-val" id="k-ac">—</div><div class="kpi-sub">Incurred to date</div></div>
+    <div class="kpi ca"><div class="kpi-lbl">Open Commitments</div><div class="kpi-val" id="k-cm">—</div><div class="kpi-sub">Committed not yet spent</div></div>
+  </div>
+
+  <!-- Recommended Actions -->
+  <div class="actions-card fade d4">
+    <div class="actions-label">Recommended<br>Actions</div>
+    <div class="actions-inner" id="actions-inner"><!-- filled by JS --></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="row2a fade d5">
+    <div class="card">
+      <div class="ch-hdr">
+        <div><div class="ch-t">Contract Value vs Forecast Cost per Project</div><div class="ch-s">Forecast bars in red where EAC exceeds contract value</div></div>
+        <span class="pill r" id="b-or-exec">—</span>
+      </div>
+      <div id="ch-bar-exec"></div>
+      <div class="legend">
+        <div class="leg-i"><div class="leg-sq" style="background:#1d4ed8"></div>Contract Value</div>
+        <div class="leg-i"><div class="leg-sq" style="background:#15803d"></div>Forecast (on budget)</div>
+        <div class="leg-i"><div class="leg-sq" style="background:#991b1b"></div>Forecast (overrun)</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch-hdr"><div><div class="ch-t">Projects by Status</div><div class="ch-s">Portfolio composition</div></div></div>
+      <div id="ch-donut-exec"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 2 — COST & MARGIN
+═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-cost">
+<div class="wrap">
+
+  <div class="section-label fade d1">Cost &amp; Margin Analysis</div>
+  <div class="row2 fade d2">
+    <div class="card">
+      <div class="ch-hdr">
+        <div><div class="ch-t">Contract Value vs Forecast Cost per Project</div><div class="ch-s">Sorted by contract value — red bars indicate EAC over budget</div></div>
+        <span class="pill r" id="b-or-cost">—</span>
+      </div>
+      <div id="ch-bar-cost"></div>
+      <div class="legend">
+        <div class="leg-i"><div class="leg-sq" style="background:#1d4ed8"></div>Contract Value</div>
+        <div class="leg-i"><div class="leg-sq" style="background:#15803d"></div>Forecast (on budget)</div>
+        <div class="leg-i"><div class="leg-sq" style="background:#991b1b"></div>Forecast (overrun)</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch-hdr">
+        <div><div class="ch-t">Contract Value vs Margin %</div><div class="ch-s">Bubble size = Forecast Cost &nbsp;·&nbsp; Lines at breakeven and 10% target</div></div>
+        <span class="pill b">Scatter</span>
+      </div>
+      <div id="ch-scatter-cost"></div>
+    </div>
+  </div>
+
+  <div class="row2 fade d3">
+    <div class="card">
+      <div class="ch-hdr">
+        <div><div class="ch-t">Cost Overrun Ranking</div><div class="ch-s">EAC minus Contract — positive values indicate budget exceeded</div></div>
+        <span class="pill r">Risk</span>
+      </div>
+      <div id="ch-ovr-cost"></div>
+    </div>
+    <div class="card">
+      <div class="ch-hdr">
+        <div><div class="ch-t">Margin % by Project</div><div class="ch-s">Ranked best to worst — red below 0%, amber below 10%</div></div>
+      </div>
+      <div id="ch-margin-cost"></div>
+    </div>
+  </div>
+
+  <div class="section-label fade d4">Cost Detail — Project Register</div>
+  <div class="tbl-wrap fade d4">
+    <div class="tbl-hdr"><h3>Cost &amp; Margin Detail</h3><span class="tbl-cnt" id="cnt-cost">—</span></div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Project</th><th>Manager</th><th>Region</th><th>Status</th>
+          <th class="nr">Contract (€)</th><th class="nr">Actual (€)</th>
+          <th class="nr">Forecast (€)</th><th class="nr">Margin %</th><th class="nr">Overrun (€)</th>
+        </tr></thead>
+        <tbody id="tbl-cost"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 3 — CASH FLOW
+═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-cash">
+<div class="wrap">
+
+  <div class="section-label fade d1">Cash Flow KPIs</div>
+  <!-- 5 KPIs now — Invoiced / Cash In / Gap / Collection % / DSO -->
+  <div class="kpi-grid-5 fade d2">
+    <div class="kpi cg"><div class="kpi-lbl">Total Invoiced</div><div class="kpi-val" id="ck-inv">—</div><div class="kpi-sub">Billed to clients</div></div>
+    <div class="kpi cg"><div class="kpi-lbl">Cash In</div><div class="kpi-val" id="ck-ci">—</div><div class="kpi-sub">Payments received</div></div>
+    <div class="kpi ca"><div class="kpi-lbl">Total Cash Gap</div><div class="kpi-val" id="ck-gap">—</div><div class="kpi-sub">Invoiced minus received</div></div>
+    <div class="kpi cr"><div class="kpi-lbl">Collection Rate</div><div class="kpi-val" id="ck-coll">—</div><div class="kpi-sub">Cash In / Invoiced</div></div>
+    <!-- NEW: DSO proxy -->
+    <div class="kpi cb"><div class="kpi-lbl">DSO (proxy)</div><div class="kpi-val" id="ck-dso">—</div><div class="kpi-sub">Cash cycle indicator</div></div>
+  </div>
+
+  <div class="fade d3"><div id="cash-insight-card" class="insight-card mb9"></div></div>
+
+  <div class="row2 fade d4">
+    <div class="card">
+      <div class="ch-hdr">
+        <div><div class="ch-t">Invoiced vs Cash In per Project</div><div class="ch-s">Sorted by cash gap — largest exposure first</div></div>
+        <span class="pill a" id="b-cg-cash">—</span>
+      </div>
+      <div id="ch-cash-main"></div>
+      <div class="legend">
+        <div class="leg-i"><div class="leg-sq" style="background:#1d4ed8"></div>Invoiced</div>
+        <div class="leg-i"><div class="leg-sq" style="background:#15803d"></div>Cash In</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch-hdr">
+        <div><div class="ch-t">Cash Gap per Project (€)</div><div class="ch-s">Red = gap over €150K, amber = gap present</div></div>
+      </div>
+      <div id="ch-gap-bar"></div>
+    </div>
+  </div>
+
+  <div class="section-label fade d5">Cash Flow — Project Detail</div>
+  <div class="tbl-wrap fade d5">
+    <div class="tbl-hdr"><h3>Cash Flow Detail</h3><span class="tbl-cnt" id="cnt-cash">—</span></div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Project</th><th>Manager</th><th>Status</th>
+          <th class="nr">Invoiced (€)</th><th class="nr">Cash In (€)</th>
+          <th class="nr">Cash Gap (€)</th><th class="nr">Collection %</th>
+        </tr></thead>
+        <tbody id="tbl-cash"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TAB 4 — SCENARIO ANALYSIS
+═══════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-scenario">
+<div class="wrap">
+
+  <!-- One-number takeaway insight box -->
+  <div class="sc-insight-box fade d1">
+    <div class="si-tag"><span class="dec-pulse"></span>Scenario Intelligence</div>
+    <p class="si-sentence" id="sc-insight-text">—</p>
+  </div>
+
+  <div class="section-label fade d2">Scenario Assumptions &amp; Results</div>
+  <div class="scenario-grid fade d2">
+    <!-- Base -->
+    <div class="scenario-card base">
+      <span class="sc-badge base">Base Case</span>
+      <div class="sc-title">Current Trajectory</div>
+      <div class="sc-subtitle">No corrective action. Portfolio continues on current cost and cash path.</div>
+      <div class="sc-margin-hero" id="sc-base-hero"></div>
+      <div id="sc-base-metrics"></div>
+      <div class="sc-assumption"><p><strong>Assumptions:</strong> EAC = Forecast Cost as filed. No recovery on delayed projects. Current collection rate maintained.</p></div>
+    </div>
+    <!-- Risk -->
+    <div class="scenario-card risk">
+      <span class="sc-badge risk">Risk Case</span>
+      <div class="sc-title">Downside Stress</div>
+      <div class="sc-subtitle">Delayed projects incur +10% additional cost. Cash collection drops to 80%.</div>
+      <div class="sc-margin-hero" id="sc-risk-hero"></div>
+      <div id="sc-risk-metrics"></div>
+      <div class="sc-assumption"><p><strong>Assumptions:</strong> Delayed project EAC +10%. Collection rate reduced to 80%. Committed costs fully materialise.</p></div>
+    </div>
+    <!-- Recovery -->
+    <div class="scenario-card recovery">
+      <span class="sc-badge recovery">Recovery Case</span>
+      <div class="sc-title">Upside / Action Plan</div>
+      <div class="sc-subtitle">Cost mitigation reduces overruns by 50%. Accelerated collections close the gap.</div>
+      <div class="sc-margin-hero" id="sc-recovery-hero"></div>
+      <div id="sc-recovery-metrics"></div>
+      <div class="sc-assumption"><p><strong>Assumptions:</strong> Overruns reduced 50% via corrective action. Collection rate improved to 95%. Delayed projects back on track.</p></div>
+    </div>
+  </div>
+
+  <div class="row2 fade d3">
+    <div class="card">
+      <div class="ch-hdr"><div><div class="ch-t">Scenario Comparison: Portfolio Margin %</div><div class="ch-s">Impact on blended margin across three scenarios</div></div></div>
+      <div id="ch-scenario-margin"></div>
+    </div>
+    <div class="card">
+      <div class="ch-hdr"><div><div class="ch-t">Scenario Comparison: Cash Position</div><div class="ch-s">Projected total Cash In under each scenario</div></div></div>
+      <div id="ch-scenario-cash"></div>
+    </div>
+  </div>
+
+  <div class="section-label fade d4">Project-Level Scenario Impact</div>
+  <div class="tbl-wrap fade d4">
+    <div class="tbl-hdr"><h3>Scenario Impact by Project</h3><span class="tbl-cnt" id="cnt-sc">—</span></div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>ID</th><th>Project</th><th>Status</th>
+          <th class="nr">Base EAC (€)</th><th class="nr">Base Margin</th>
+          <th class="nr">Risk EAC (€)</th><th class="nr">Risk Margin</th>
+          <th class="nr">Recovery EAC (€)</th><th class="nr">Recovery Margin</th>
+        </tr></thead>
+        <tbody id="tbl-scenario"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<footer class="footer">
+  Financial Control Dashboard &nbsp;&middot;&nbsp; Industrial Projects Portfolio &nbsp;&middot;&nbsp; <span id="f-date">—</span>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════
+     DATA & JAVASCRIPT
+═══════════════════════════════════════════════════ -->
+<script>
+/* ─── DATA ──────────────────────────────────────────── */
+var DATA=[
+  {Project_ID:"P001",Project_Name:"Steel Structure Assembly \u2013 Plant A",Client:"Client A",Region:"Poland",Start_Date:"2025-01-10",End_Date:"2025-09-30",Contract_Value_EUR:1200000,Actual_Cost_EUR:800000,Forecast_Cost_EUR:1100000,Invoiced_EUR:900000,Cash_In_EUR:750000,Committed_Cost_EUR:200000,Project_Manager:"Kowalski",Status:"Active"},
+  {Project_ID:"P002",Project_Name:"Pipeline Installation \u2013 Refinery",Client:"Client B",Region:"Germany",Start_Date:"2025-02-01",End_Date:"2025-11-30",Contract_Value_EUR:2000000,Actual_Cost_EUR:1500000,Forecast_Cost_EUR:2100000,Invoiced_EUR:1600000,Cash_In_EUR:1400000,Committed_Cost_EUR:300000,Project_Manager:"Nowak",Status:"Delayed"},
+  {Project_ID:"P003",Project_Name:"Tank Construction \u2013 Chemical Site",Client:"Client C",Region:"Czech Republic",Start_Date:"2025-03-15",End_Date:"2025-10-15",Contract_Value_EUR:1500000,Actual_Cost_EUR:1000000,Forecast_Cost_EUR:1400000,Invoiced_EUR:1200000,Cash_In_EUR:1100000,Committed_Cost_EUR:250000,Project_Manager:"Zieli\u0144ski",Status:"Active"},
+  {Project_ID:"P004",Project_Name:"Production Hall Expansion",Client:"Client D",Region:"Poland",Start_Date:"2025-01-20",End_Date:"2025-08-30",Contract_Value_EUR:1800000,Actual_Cost_EUR:1700000,Forecast_Cost_EUR:1900000,Invoiced_EUR:1750000,Cash_In_EUR:1600000,Committed_Cost_EUR:150000,Project_Manager:"Wi\u015bniewski",Status:"Delayed"},
+  {Project_ID:"P005",Project_Name:"Electrical Systems Upgrade",Client:"Client E",Region:"Germany",Start_Date:"2025-04-01",End_Date:"2025-12-31",Contract_Value_EUR:900000,Actual_Cost_EUR:500000,Forecast_Cost_EUR:800000,Invoiced_EUR:600000,Cash_In_EUR:550000,Committed_Cost_EUR:100000,Project_Manager:"Kami\u0144ski",Status:"Active"},
+  {Project_ID:"P006",Project_Name:"Wastewater Treatment Modernisation",Client:"Client F",Region:"Poland",Start_Date:"2025-02-10",End_Date:"2025-09-10",Contract_Value_EUR:1300000,Actual_Cost_EUR:900000,Forecast_Cost_EUR:1200000,Invoiced_EUR:950000,Cash_In_EUR:850000,Committed_Cost_EUR:200000,Project_Manager:"Lewandowski",Status:"Active"},
+  {Project_ID:"P007",Project_Name:"Warehouse Automation Project",Client:"Client G",Region:"Czech Republic",Start_Date:"2025-03-01",End_Date:"2025-11-01",Contract_Value_EUR:2200000,Actual_Cost_EUR:1600000,Forecast_Cost_EUR:2000000,Invoiced_EUR:1700000,Cash_In_EUR:1500000,Committed_Cost_EUR:350000,Project_Manager:"D\u0105browski",Status:"Active"},
+  {Project_ID:"P008",Project_Name:"Industrial Piping System",Client:"Client H",Region:"Poland",Start_Date:"2025-05-01",End_Date:"2025-12-15",Contract_Value_EUR:1100000,Actual_Cost_EUR:600000,Forecast_Cost_EUR:1000000,Invoiced_EUR:700000,Cash_In_EUR:650000,Committed_Cost_EUR:180000,Project_Manager:"Kaczmarek",Status:"Active"},
+  {Project_ID:"P009",Project_Name:"HVAC Installation",Client:"Client I",Region:"Germany",Start_Date:"2025-01-15",End_Date:"2025-07-30",Contract_Value_EUR:800000,Actual_Cost_EUR:750000,Forecast_Cost_EUR:900000,Invoiced_EUR:780000,Cash_In_EUR:700000,Committed_Cost_EUR:120000,Project_Manager:"Mazur",Status:"Delayed"},
+  {Project_ID:"P010",Project_Name:"Energy Efficiency Upgrade",Client:"Client J",Region:"Poland",Start_Date:"2025-02-20",End_Date:"2025-10-20",Contract_Value_EUR:1400000,Actual_Cost_EUR:900000,Forecast_Cost_EUR:1300000,Invoiced_EUR:1000000,Cash_In_EUR:950000,Committed_Cost_EUR:220000,Project_Manager:"Krawczyk",Status:"Active"},
+  {Project_ID:"P011",Project_Name:"Steel Tank Renovation",Client:"Client K",Region:"Czech Republic",Start_Date:"2025-03-05",End_Date:"2025-09-25",Contract_Value_EUR:950000,Actual_Cost_EUR:700000,Forecast_Cost_EUR:900000,Invoiced_EUR:800000,Cash_In_EUR:750000,Committed_Cost_EUR:100000,Project_Manager:"Piotrowski",Status:"Completed"},
+  {Project_ID:"P012",Project_Name:"Process Line Modernization",Client:"Client L",Region:"Germany",Start_Date:"2025-04-10",End_Date:"2025-12-10",Contract_Value_EUR:2100000,Actual_Cost_EUR:1700000,Forecast_Cost_EUR:2200000,Invoiced_EUR:1800000,Cash_In_EUR:1600000,Committed_Cost_EUR:300000,Project_Manager:"Grabowski",Status:"Delayed"},
+  {Project_ID:"P013",Project_Name:"Assembly Line Extension",Client:"Client M",Region:"Poland",Start_Date:"2025-05-15",End_Date:"2025-11-15",Contract_Value_EUR:1250000,Actual_Cost_EUR:800000,Forecast_Cost_EUR:1200000,Invoiced_EUR:900000,Cash_In_EUR:850000,Committed_Cost_EUR:200000,Project_Manager:"Zaj\u0105c",Status:"Active"},
+  {Project_ID:"P014",Project_Name:"Boiler System Installation",Client:"Client N",Region:"Germany",Start_Date:"2025-01-25",End_Date:"2025-08-25",Contract_Value_EUR:1600000,Actual_Cost_EUR:1200000,Forecast_Cost_EUR:1500000,Invoiced_EUR:1300000,Cash_In_EUR:1200000,Committed_Cost_EUR:250000,Project_Manager:"Kr\u00f3l",Status:"Completed"},
+  {Project_ID:"P015",Project_Name:"Chemical Plant Upgrade",Client:"Client O",Region:"Czech Republic",Start_Date:"2025-02-28",End_Date:"2025-10-30",Contract_Value_EUR:2300000,Actual_Cost_EUR:1800000,Forecast_Cost_EUR:2400000,Invoiced_EUR:1900000,Cash_In_EUR:1700000,Committed_Cost_EUR:400000,Project_Manager:"Wieczorek",Status:"Delayed"}
+];
+
+/* ─── HELPERS ───────────────────────────────────────── */
+function fM(v){var a=Math.abs(v);if(a>=1e6)return'\u20ac'+(v/1e6).toFixed(2)+'M';if(a>=1e3)return'\u20ac'+(v/1e3).toFixed(0)+'K';return'\u20ac'+Math.round(v);}
+function fFull(v){return v.toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function short(s,n){return s.length>(n||22)?s.slice(0,(n||22))+'\u2026':s;}
+function pct(v){return(v*100).toFixed(1)+'%';}
+
+/* ─── PLOTLY BASE ───────────────────────────────────── */
+var CFG={displayModeBar:false,responsive:true};
+var BASE={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+  font:{family:"'Inter',sans-serif",size:11,color:'#64748b'},
+  margin:{t:6,r:12,b:46,l:60},showlegend:false};
+
+/* ─── COMPUTED DATA ─────────────────────────────────── */
+var PS=[];
+function compute(){
+  PS=DATA.map(function(p){return{
+    id:p.Project_ID,name:p.Project_Name,client:p.Client,
+    region:p.Region,pm:p.Project_Manager,status:p.Status,
+    cv:p.Contract_Value_EUR,ac:p.Actual_Cost_EUR,fc:p.Forecast_Cost_EUR,
+    inv:p.Invoiced_EUR,ci:p.Cash_In_EUR,com:p.Committed_Cost_EUR,
+    margin:(p.Contract_Value_EUR-p.Forecast_Cost_EUR)/p.Contract_Value_EUR,
+    overrun:p.Forecast_Cost_EUR-p.Contract_Value_EUR,
+    gap:p.Invoiced_EUR-p.Cash_In_EUR
+  };});
+}
+
+/* ─── TAB SWITCHING ─────────────────────────────────── */
+var TABS=['exec','cost','cash','scenario'];
+var rendered={exec:false,cost:false,cash:false,scenario:false};
+function showTab(id){
+  TABS.forEach(function(t){
+    document.getElementById('tab-'+t).classList.remove('active');
+    document.getElementById('btn-'+t).classList.remove('active');
+  });
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('btn-'+id).classList.add('active');
+  if(!rendered[id]){
+    if(id==='exec') renderExec();
+    else if(id==='cost') renderCost();
+    else if(id==='cash') renderCashTab();
+    else if(id==='scenario') renderScenario();
+    rendered[id]=true;
+  }
+  setTimeout(function(){window.dispatchEvent(new Event('resize'));},50);
+}
+
+/* ═══════════════════════════════════════════════════
+   TAB 1 — EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════ */
+function renderExec(){
+  var ps=PS;
+  var sumCV=ps.reduce(function(s,p){return s+p.cv;},0);
+  var sumFC=ps.reduce(function(s,p){return s+p.fc;},0);
+  var sumAC=ps.reduce(function(s,p){return s+p.ac;},0);
+  var sumCI=ps.reduce(function(s,p){return s+p.ci;},0);
+  var sumCom=ps.reduce(function(s,p){return s+p.com;},0);
+  var sumInv=ps.reduce(function(s,p){return s+p.inv;},0);
+  var sumGap=ps.reduce(function(s,p){return s+p.gap;},0);
+  var portMg=(sumCV-sumFC)/sumCV;
+  var overruns=ps.filter(function(p){return p.overrun>0;});
+  var totalOR=overruns.reduce(function(s,p){return s+p.overrun;},0);
+  var delayed=ps.filter(function(p){return p.status==='Delayed';});
+  var collRate=sumInv>0?sumCI/sumInv:0;
+  var highGap=ps.filter(function(p){return p.gap>150000;});
+  var worstProject=ps.slice().sort(function(a,b){return b.overrun-a.overrun;})[0];
+
+  /* Date + header */
+  var now=new Date();
+  var ds=now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('h-date').textContent=ds;
+  document.getElementById('f-date').textContent='Data as at '+ds;
+  document.getElementById('h-cv').textContent=fM(sumCV);
+  document.getElementById('h-np').textContent=ps.length;
+
+  /* ── WHAT: headline ── */
+  var hl;
+  if(portMg<0) hl='Portfolio is value destructive \u2013 immediate intervention required';
+  else if(overruns.length>0) hl='Cost overruns are driving margin erosion across the portfolio';
+  else if(collRate<0.85) hl='Cash collection risk is the primary issue in the portfolio';
+  else hl='Portfolio is financially healthy and under control';
+  document.getElementById('main-headline').textContent=hl;
+
+  /* ── SO WHAT: implication ── */
+  var pts=[];
+  if(overruns.length) pts.push(overruns.length+' project'+(overruns.length>1?'s':'')+' overrunning EAC ('+fM(totalOR)+')');
+  if(portMg<.1) pts.push('blended margin '+pct(portMg)+' below the 10% threshold');
+  if(delayed.length) pts.push(delayed.length+' delayed project'+(delayed.length>1?'s':'')+' require schedule recovery');
+  if(!pts.length) pts.push('all projects are performing within financial targets');
+  document.getElementById('insight-text').textContent=pts.join('; ')+'.';
+
+  /* ── NOW WHAT: action ── */
+  var action;
+  if(portMg<0){
+    action='Immediate cost freeze and EAC revalidation required across all projects.';
+  } else if(overruns.length>0){
+    action='Focus on top overruns and enforce recovery plans within 2 weeks.';
+  } else if(collRate<0.85){
+    action='Accelerate collections and review payment terms with clients.';
+  } else {
+    action='Maintain discipline and monitor key KPIs weekly.';
+  }
+  document.getElementById('headline-action').textContent=action;
+
+  /* Decision panel counts */
+  document.getElementById('d-or').textContent=overruns.length;
+  document.getElementById('d-cg').textContent=fM(sumGap);
+
+  /* Exec summary bullets */
+  document.getElementById('es-margin').textContent=
+    portMg<0?'Portfolio forecasts a net loss. EAC exceeds contract by '+fM(sumFC-sumCV)+'.'
+    :portMg<.1?'Blended margin of '+pct(portMg)+' is below the 10% target. '+overruns.length+' project'+(overruns.length!==1?'s are':' is')+' driving pressure.'
+    :'Blended margin of '+pct(portMg)+' is on target. Portfolio performance is stable.';
+
+  var orText=overruns.length===0?'No projects forecasting a cost overrun.'
+    :overruns.length+' project'+(overruns.length>1?'s are':' is')+' overrunning ('+fM(totalOR)+', '+pct(totalOR/sumCV)+' of portfolio).';
+  if(worstProject&&worstProject.overrun>0) orText+=' Largest: '+worstProject.name+' ('+fM(worstProject.overrun)+').';
+  document.getElementById('es-overrun').textContent=orText;
+
+  document.getElementById('es-cash').textContent=
+    'Collection rate: '+pct(collRate)+'. Cash gap of '+fM(sumGap)+'.'
+    +(highGap.length?' '+highGap.length+' project'+(highGap.length!==1?'s':'')+' with gap over \u20ac150K.':'');
+
+  /* PRIMARY KPIs */
+  var mgEl=document.getElementById('k-mg');mgEl.textContent=pct(portMg);
+  mgEl.style.color=portMg<0?'var(--red2)':portMg<.1?'var(--amber2)':'var(--green2)';
+  var orEl=document.getElementById('k-or');orEl.textContent=overruns.length+' / '+ps.length;
+  orEl.style.color=overruns.length>0?'var(--red2)':'var(--green2)';
+  document.getElementById('k-tgap').textContent=fM(sumGap);
+  var crEl=document.getElementById('k-cr');crEl.textContent=pct(collRate);
+  crEl.style.color=collRate<0.85?'var(--red2)':collRate<0.92?'var(--amber2)':'var(--green2)';
+
+  /* ── Critical / Warning KPI backgrounds — bad state draws the eye ── */
+  function setKpiState(valId,state){
+    var el=document.getElementById(valId);
+    if(!el) return;
+    var card=el.closest('.kpi');
+    if(!card) return;
+    card.classList.remove('critical','warning');
+    if(state==='critical') card.classList.add('critical');
+    else if(state==='warning') card.classList.add('warning');
+  }
+  setKpiState('k-mg', portMg<0?'critical':portMg<.1?'warning':null);
+  setKpiState('k-or', overruns.length>0?(overruns.length/ps.length>0.4?'critical':'warning'):null);
+  setKpiState('k-tgap', sumGap>(sumCV*0.1)?'critical':sumGap>0?'warning':null);
+  setKpiState('k-cr', collRate<0.85?'critical':collRate<0.92?'warning':null);
+
+  /* ── Strategic board-level sentence ── */
+  var strategic;
+  if(portMg<0){
+    strategic='Portfolio requires immediate intervention — EAC exceeds contract value and the portfolio is generating a net loss.';
+  } else if(overruns.length>0 && collRate<0.9){
+    strategic='Portfolio requires immediate focus on cost overruns and cash collection to protect margin and liquidity.';
+  } else if(overruns.length>0){
+    strategic='Margin is under pressure from cost overruns — enforce recovery plans to protect portfolio profitability.';
+  } else if(collRate<0.85){
+    strategic='Cash collection is the primary risk — accelerate receivables to maintain liquidity across the portfolio.';
+  } else {
+    strategic='Portfolio is performing within targets — maintain cost discipline and weekly KPI monitoring to sustain performance.';
+  }
+  var stEl=document.getElementById('es-strategic');
+  if(stEl) stEl.textContent=strategic;
+
+  /* SECONDARY KPIs */
+  document.getElementById('k-cv').textContent=fM(sumCV);
+  document.getElementById('k-fc').textContent=fM(sumFC);
+  document.getElementById('k-ac').textContent=fM(sumAC);
+  document.getElementById('k-cm').textContent=fM(sumCom);
+
+  document.getElementById('b-or-exec').textContent=overruns.length+' overrun'+(overruns.length!==1?'s':'');
+
+  /* ── RECOMMENDED ACTIONS (dynamic project names) ── */
+  var topOverruns=overruns.slice().sort(function(a,b){return b.overrun-a.overrun;}).slice(0,3);
+  var topGapProjects=highGap.slice().sort(function(a,b){return b.gap-a.gap;}).slice(0,3);
+
+  var a1='<strong>Review cost overrun projects</strong>';
+  a1+=topOverruns.length>0
+    ?'Validate EAC and recovery plan for: '+topOverruns.map(function(p){return short(p.name,24);}).join(', ')+'.'
+    :'No projects currently in overrun — maintain current controls.';
+
+  var a2='<strong>Accelerate cash collection</strong>';
+  a2+=topGapProjects.length>0
+    ?'Follow up on: '+topGapProjects.map(function(p){return short(p.name,22)+' ('+fM(p.gap)+')';}).join(', ')+'.'
+    :'All cash gaps are within acceptable thresholds.';
+
+  var a3='<strong>Revalidate EAC on delayed projects</strong>';
+  a3+=delayed.length>0
+    ?delayed.length+' project'+(delayed.length>1?'s require':' requires')+' reforecast: '+delayed.map(function(p){return short(p.name,22);}).join(', ')+'.'
+    :'No delayed projects in current portfolio.';
+
+  function aItem(n,html){return'<div class="action-item"><div class="action-num">'+n+'</div><div class="action-text">'+html+'</div></div>';}
+  document.getElementById('actions-inner').innerHTML=aItem(1,a1)+aItem(2,a2)+aItem(3,a3);
+
+  /* ── BAR CHART ── */
+  var sb=ps.slice().sort(function(a,b){return b.cv-a.cv;});
+  var nm=sb.map(function(p){return short(p.name,20);});
+  Plotly.newPlot('ch-bar-exec',[
+    {x:nm,y:sb.map(function(p){return p.cv;}),type:'bar',name:'Contract',marker:{color:'#1d4ed8',opacity:.88},hovertemplate:'<b>%{x}</b><br>Contract: \u20ac%{y:,.0f}<extra></extra>'},
+    {x:nm,y:sb.map(function(p){return p.fc;}),type:'bar',name:'Forecast',marker:{color:sb.map(function(p){return p.overrun>0?'#991b1b':'#15803d';}),opacity:.88},hovertemplate:'<b>%{x}</b><br>Forecast: \u20ac%{y:,.0f}<extra></extra>'}
+  ],Object.assign({},BASE,{barmode:'group',bargap:.26,bargroupgap:.05,height:280,
+    xaxis:{tickfont:{size:9.5},gridcolor:'transparent',tickangle:-28,automargin:true},
+    yaxis:{tickformat:',.0f',gridcolor:'#f1f5f9',tickprefix:'\u20ac',tickfont:{size:9.5},griddash:'dot'}}),CFG);
+
+  /* ── DONUT ── */
+  var c={};ps.forEach(function(p){c[p.status]=(c[p.status]||0)+1;});
+  var lbl=Object.keys(c),vals=lbl.map(function(l){return c[l];});
+  var cm={Active:'#1d4ed8',Delayed:'#991b1b',Completed:'#15803d'};
+  Plotly.newPlot('ch-donut-exec',[{labels:lbl,values:vals,type:'pie',hole:.58,
+    marker:{colors:lbl.map(function(l){return cm[l]||'#94a3b8';}),line:{color:'#fff',width:2.5}},
+    textinfo:'none',hovertemplate:'<b>%{label}</b><br>%{value} projects · %{percent}<extra></extra>'}],
+    Object.assign({},BASE,{height:280,margin:{t:8,r:8,b:8,l:8},showlegend:true,
+      legend:{x:.62,y:.5,font:{size:11},bgcolor:'rgba(0,0,0,0)',orientation:'v'},
+      annotations:[{text:'<b>'+ps.length+'</b><br><span style="font-size:9px;color:#94a3b8">Projects</span>',
+        x:.3,y:.5,showarrow:false,font:{size:15,family:"'Inter',sans-serif",color:'#0f172a'}}]}),CFG);
+}
+
+/* ═══════════════════════════════════════════════════
+   TAB 2 — COST & MARGIN
+═══════════════════════════════════════════════════ */
+function renderCost(){
+  var ps=PS;
+  var overruns=ps.filter(function(p){return p.overrun>0;});
+  document.getElementById('b-or-cost').textContent=overruns.length+' overrun'+(overruns.length!==1?'s':'');
+
+  var sb=ps.slice().sort(function(a,b){return b.cv-a.cv;});
+  var nm=sb.map(function(p){return short(p.name,20);});
+  Plotly.newPlot('ch-bar-cost',[
+    {x:nm,y:sb.map(function(p){return p.cv;}),type:'bar',name:'Contract',marker:{color:'#1d4ed8',opacity:.88},hovertemplate:'<b>%{x}</b><br>Contract: \u20ac%{y:,.0f}<extra></extra>'},
+    {x:nm,y:sb.map(function(p){return p.fc;}),type:'bar',name:'Forecast',marker:{color:sb.map(function(p){return p.overrun>0?'#991b1b':'#15803d';}),opacity:.88},hovertemplate:'<b>%{x}</b><br>Forecast: \u20ac%{y:,.0f}<extra></extra>'}
+  ],Object.assign({},BASE,{barmode:'group',bargap:.26,bargroupgap:.05,height:295,
+    xaxis:{tickfont:{size:9.5},gridcolor:'transparent',tickangle:-28,automargin:true},
+    yaxis:{tickformat:',.0f',gridcolor:'#f1f5f9',tickprefix:'\u20ac',tickfont:{size:9.5},griddash:'dot'}}),CFG);
+
+  var mg=ps.map(function(p){return p.margin*100;});
+  var xs=ps.map(function(p){return p.cv;});
+  var xmin=Math.min.apply(null,xs)*.82,xmax=Math.max.apply(null,xs)*1.1;
+  Plotly.newPlot('ch-scatter-cost',[{x:xs,y:mg,mode:'markers',type:'scatter',
+    text:ps.map(function(p){return p.name;}),
+    marker:{size:ps.map(function(p){return Math.sqrt(p.fc/1e5)*5+8;}),
+      color:mg.map(function(m){return m<0?'#dc2626':m<10?'#d97706':'#16a34a';}),
+      opacity:.8,line:{color:'#fff',width:1.5}},
+    hovertemplate:'<b>%{text}</b><br>Contract: \u20ac%{x:,.0f}<br>Margin: %{y:.1f}%<extra></extra>'}],
+    Object.assign({},BASE,{height:295,
+      xaxis:{title:{text:'Contract Value (\u20ac)',font:{size:11}},tickformat:',.0s',tickprefix:'\u20ac',gridcolor:'#f1f5f9',griddash:'dot',range:[xmin,xmax]},
+      yaxis:{title:{text:'Margin %',font:{size:11}},ticksuffix:'%',gridcolor:'#f1f5f9',griddash:'dot',zeroline:false},
+      shapes:[{type:'line',x0:xmin,x1:xmax,y0:0,y1:0,line:{color:'#94a3b8',width:1,dash:'dot'}},
+        {type:'line',x0:xmin,x1:xmax,y0:10,y1:10,line:{color:'#dc2626',width:1.4,dash:'dash'}}],
+      annotations:[
+        {x:xmax,y:0,xanchor:'right',yanchor:'bottom',text:'breakeven',showarrow:false,font:{size:9.5,color:'#94a3b8'}},
+        {x:xmax,y:10,xanchor:'right',yanchor:'bottom',text:'10% target',showarrow:false,font:{size:9.5,color:'#dc2626'}}]}),CFG);
+
+  var so=ps.slice().sort(function(a,b){return b.overrun-a.overrun;});
+  Plotly.newPlot('ch-ovr-cost',[{x:so.map(function(p){return p.overrun;}),y:so.map(function(p){return short(p.name,28);}),
+    type:'bar',orientation:'h',marker:{color:so.map(function(p){return p.overrun>0?'#991b1b':'#15803d';}),opacity:.88},
+    hovertemplate:'<b>%{y}</b><br>Overrun: \u20ac%{x:,.0f}<extra></extra>'}],
+    Object.assign({},BASE,{height:295,margin:{t:6,r:14,b:46,l:196},
+      xaxis:{tickprefix:'\u20ac',tickformat:',.0s',gridcolor:'#f1f5f9',griddash:'dot',tickfont:{size:9.5},zeroline:true,zerolinecolor:'#e2e8f0',zerolinewidth:1.5},
+      yaxis:{autorange:'reversed',tickfont:{size:9.5},gridcolor:'transparent'}}),CFG);
+
+  var sm=ps.slice().sort(function(a,b){return b.margin-a.margin;});
+  Plotly.newPlot('ch-margin-cost',[{x:sm.map(function(p){return p.margin*100;}),y:sm.map(function(p){return short(p.name,28);}),
+    type:'bar',orientation:'h',marker:{color:sm.map(function(p){return p.margin<0?'#991b1b':p.margin<.1?'#b45309':'#15803d';}),opacity:.88},
+    hovertemplate:'<b>%{y}</b><br>Margin: %{x:.1f}%<extra></extra>'}],
+    Object.assign({},BASE,{height:295,margin:{t:6,r:14,b:46,l:196},
+      xaxis:{ticksuffix:'%',tickformat:'.1f',gridcolor:'#f1f5f9',griddash:'dot',tickfont:{size:9.5},zeroline:true,zerolinecolor:'#e2e8f0',zerolinewidth:1.5},
+      yaxis:{autorange:'reversed',tickfont:{size:9.5},gridcolor:'transparent'}}),CFG);
+
+  document.getElementById('cnt-cost').textContent=ps.length+' projects';
+  document.getElementById('tbl-cost').innerHTML=ps.map(function(p){
+    var mp=(p.margin*100).toFixed(1);var mc=p.margin>=0?'pos':'neg';
+    var rc=p.overrun>0?'rr':'';
+    var orSt=p.overrun>0?'color:var(--red2);font-weight:600':p.overrun<0?'color:var(--green2)':'';
+    return'<tr class="'+rc+'"><td class="pid">'+p.id+'</td><td class="pname">'+p.name+'</td><td>'+p.pm+'</td><td>'+p.region+'</td>'
+      +'<td><span class="sbg '+p.status.toLowerCase()+'">'+p.status+'</span></td>'
+      +'<td class="nr">'+fFull(p.cv)+'</td><td class="nr">'+fFull(p.ac)+'</td><td class="nr">'+fFull(p.fc)+'</td>'
+      +'<td class="nr"><span class="mpill '+mc+'">'+mp+'%</span></td>'
+      +'<td class="nr" style="'+orSt+'">'+fFull(p.overrun)+'</td></tr>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   TAB 3 — CASH FLOW
+═══════════════════════════════════════════════════ */
+function renderCashTab(){
+  var ps=PS;
+  var sumInv=ps.reduce(function(s,p){return s+p.inv;},0);
+  var sumCI=ps.reduce(function(s,p){return s+p.ci;},0);
+  var sumGap=ps.reduce(function(s,p){return s+p.gap;},0);
+  var collRate=sumInv>0?sumCI/sumInv:0;
+  var highGap=ps.filter(function(p){return p.gap>150000;});
+
+  document.getElementById('ck-inv').textContent=fM(sumInv);
+  document.getElementById('ck-ci').textContent=fM(sumCI);
+  document.getElementById('ck-gap').textContent=fM(sumGap);
+
+  var ckEl=document.getElementById('ck-coll');
+  ckEl.textContent=pct(collRate);
+  ckEl.style.color=collRate<0.85?'var(--red2)':collRate<0.92?'var(--amber2)':'var(--green2)';
+
+  /* ── DSO proxy: (gap / invoiced) × 30 ── */
+  var dso=sumInv>0?(sumGap/sumInv)*30:0;
+  var dsoEl=document.getElementById('ck-dso');
+  dsoEl.textContent=dso.toFixed(0)+' days';
+  dsoEl.style.color=dso>10?'var(--red2)':dso>6?'var(--amber2)':'var(--green2)';
+
+  var topGap=ps.slice().sort(function(a,b){return b.gap-a.gap;})[0];
+  var icCol=collRate<0.85?'r':collRate<0.92?'a':'g';
+  var icSvg=collRate<0.85
+    ?'<svg viewBox="0 0 12 12" fill="none"><path d="M6 2v4M6 8.5v.5" stroke="#991b1b" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    :'<svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4" stroke="#15803d" stroke-width="1.2"/><path d="M4.5 6l1 1 2-2" stroke="#15803d" stroke-width="1.2" stroke-linecap="round"/></svg>';
+  document.getElementById('cash-insight-card').innerHTML=
+    '<div class="ic-icon '+icCol+'">'+icSvg+'</div>'
+    +'<div class="ic-body"><div class="ic-label">Cash Collection Assessment</div>'
+    +'<div class="ic-text">Collection rate is <strong>'+pct(collRate)+'</strong>. '
+    +'DSO proxy is <strong>'+dso.toFixed(0)+' days</strong>. '
+    +(highGap.length?highGap.length+' project'+(highGap.length>1?'s':'')+' have a gap exceeding \u20ac150K. ':'')
+    +(topGap&&topGap.gap>0?'Largest gap: <strong>'+topGap.name+'</strong> ('+fM(topGap.gap)+').':'')
+    +'</div></div>';
+
+  document.getElementById('b-cg-cash').textContent=fM(sumGap)+' total gap';
+
+  var sc=ps.slice().sort(function(a,b){return b.gap-a.gap;});
+  var nm=sc.map(function(p){return short(p.name,18);});
+  Plotly.newPlot('ch-cash-main',[
+    {x:nm,y:sc.map(function(p){return p.inv;}),type:'bar',name:'Invoiced',marker:{color:'#1d4ed8',opacity:.88},hovertemplate:'<b>%{x}</b><br>Invoiced: \u20ac%{y:,.0f}<extra></extra>'},
+    {x:nm,y:sc.map(function(p){return p.ci;}),type:'bar',name:'Cash In',marker:{color:'#15803d',opacity:.88},hovertemplate:'<b>%{x}</b><br>Cash In: \u20ac%{y:,.0f}<extra></extra>'}
+  ],Object.assign({},BASE,{barmode:'group',bargap:.26,bargroupgap:.05,height:300,
+    xaxis:{tickfont:{size:9.5},gridcolor:'transparent',tickangle:-28,automargin:true},
+    yaxis:{tickformat:',.0f',gridcolor:'#f1f5f9',tickprefix:'\u20ac',tickfont:{size:9.5},griddash:'dot'}}),CFG);
+
+  Plotly.newPlot('ch-gap-bar',[{x:sc.map(function(p){return p.gap;}),y:sc.map(function(p){return short(p.name,28);}),
+    type:'bar',orientation:'h',marker:{color:sc.map(function(p){return p.gap>150000?'#991b1b':p.gap>0?'#b45309':'#15803d';}),opacity:.88},
+    hovertemplate:'<b>%{y}</b><br>Gap: \u20ac%{x:,.0f}<extra></extra>'}],
+    Object.assign({},BASE,{height:300,margin:{t:6,r:14,b:46,l:196},
+      xaxis:{tickprefix:'\u20ac',tickformat:',.0s',gridcolor:'#f1f5f9',griddash:'dot',tickfont:{size:9.5},zeroline:true,zerolinecolor:'#e2e8f0',zerolinewidth:1.5},
+      yaxis:{autorange:'reversed',tickfont:{size:9.5},gridcolor:'transparent'}}),CFG);
+
+  document.getElementById('cnt-cash').textContent=ps.length+' projects';
+  document.getElementById('tbl-cash').innerHTML=ps.slice().sort(function(a,b){return b.gap-a.gap;}).map(function(p){
+    var collP=p.inv>0?p.ci/p.inv:0;
+    var gapSt=p.gap>150000?'color:var(--red2);font-weight:600':p.gap>0?'color:var(--amber2)':'color:var(--green2)';
+    var collSt=collP<0.85?'color:var(--red2)':collP<0.92?'color:var(--amber2)':'color:var(--green2)';
+    var rc=p.gap>150000?'rr':p.gap>50000?'ra':'';
+    return'<tr class="'+rc+'"><td class="pid">'+p.id+'</td><td class="pname">'+p.name+'</td><td>'+p.pm+'</td>'
+      +'<td><span class="sbg '+p.status.toLowerCase()+'">'+p.status+'</span></td>'
+      +'<td class="nr">'+fFull(p.inv)+'</td><td class="nr">'+fFull(p.ci)+'</td>'
+      +'<td class="nr" style="'+gapSt+'">'+fFull(p.gap)+'</td>'
+      +'<td class="nr" style="'+collSt+'">'+pct(collP)+'</td></tr>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   TAB 4 — SCENARIO ANALYSIS
+═══════════════════════════════════════════════════ */
+function renderScenario(){
+  var ps=PS;
+  var sumCV=ps.reduce(function(s,p){return s+p.cv;},0);
+  var sumInv=ps.reduce(function(s,p){return s+p.inv;},0);
+
+  /* Scenario calculations */
+  var baseTotalFC=ps.reduce(function(s,p){return s+p.fc;},0);
+  var baseMg=(sumCV-baseTotalFC)/sumCV;
+  var baseCashIn=ps.reduce(function(s,p){return s+p.ci;},0);
+
+  var riskTotalFC=ps.reduce(function(s,p){return s+(p.status==='Delayed'?p.fc*1.10:p.fc);},0);
+  var riskMg=(sumCV-riskTotalFC)/sumCV;
+  var riskCashIn=sumInv*0.80;
+
+  var recoveryTotalFC=ps.reduce(function(s,p){return s+(p.overrun>0?p.cv+(p.overrun*0.5):p.fc);},0);
+  var recoveryMg=(sumCV-recoveryTotalFC)/sumCV;
+  var recoveryCashIn=sumInv*0.95;
+
+  /* ── ONE-NUMBER TAKEAWAY: scenario insight sentence ── */
+  var deltaRisk=riskMg-baseMg;
+  var deltaRec=recoveryMg-baseMg;
+  document.getElementById('sc-insight-text').innerHTML=
+    'Risk case reduces margin from <strong>'+pct(baseMg)+'</strong> to <strong>'+pct(riskMg)
+    +'</strong> (<strong style="color:#fca5a5">'+((deltaRisk*100).toFixed(1))+'pp</strong>)'
+    +', while recovery improves it to <strong>'+pct(recoveryMg)
+    +'</strong> (<strong style="color:#86efac">+'+(deltaRec*100).toFixed(1)+'pp</strong> vs base).';
+
+  /* Scenario hero margin + secondary metrics */
+  function renderScCard(heroId,metricsId,mg,fc,ci,isBase,baseMgVal){
+    var delta=isBase?null:((mg-baseMgVal)*100).toFixed(1)+'pp';
+    var deltaCls=isBase?'neu':(mg-baseMgVal>=0?'pos':'neg');
+    var deltaSign=!isBase&&(mg-baseMgVal)>=0?'+':'';
+    document.getElementById(heroId).innerHTML=
+      '<div><div class="mh-label">Portfolio Margin</div>'
+      +(isBase?'':'<div class="mh-delta '+deltaCls+'">'+deltaSign+delta+' vs Base</div>')
+      +'</div>'
+      +'<div class="mh-value" style="color:'+(mg<0?'var(--red2)':mg<.1?'var(--amber2)':'var(--green2)')+'">'+pct(mg)+'</div>';
+    var profit=sumCV-fc;
+    document.getElementById(metricsId).innerHTML=
+      '<div class="sc-metric"><span class="sm-label">Forecast Cost (EAC)</span><span class="sm-val">'+fM(fc)+'</span></div>'
+      +'<div class="sc-metric"><span class="sm-label">Expected Profit</span><span class="sm-val '+(profit>=0?'pos':'neg')+'">'+fM(profit)+'</span></div>'
+      +'<div class="sc-metric"><span class="sm-label">Projected Cash In</span><span class="sm-val">'+fM(ci)+'</span></div>';
+  }
+  renderScCard('sc-base-hero','sc-base-metrics',baseMg,baseTotalFC,baseCashIn,true,baseMg);
+  renderScCard('sc-risk-hero','sc-risk-metrics',riskMg,riskTotalFC,riskCashIn,false,baseMg);
+  renderScCard('sc-recovery-hero','sc-recovery-metrics',recoveryMg,recoveryTotalFC,recoveryCashIn,false,baseMg);
+
+  /* Comparison charts */
+  var scLay=Object.assign({},BASE,{height:295,margin:{t:6,r:20,b:46,l:60},
+    xaxis:{gridcolor:'transparent',tickfont:{size:11}},
+    yaxis:{ticksuffix:'%',tickformat:'.1f',gridcolor:'#f1f5f9',griddash:'dot',tickfont:{size:10}},
+    shapes:[{type:'line',x0:-.5,x1:2.5,y0:10,y1:10,line:{color:'#dc2626',width:1.2,dash:'dash'}}],
+    annotations:[{x:2.5,y:10,xanchor:'right',yanchor:'bottom',text:'10% target',showarrow:false,font:{size:9,color:'#dc2626'}}]});
+  Plotly.newPlot('ch-scenario-margin',[{
+    x:['Base Case','Risk Case','Recovery Case'],y:[baseMg*100,riskMg*100,recoveryMg*100],type:'bar',
+    marker:{color:['#1d4ed8','#991b1b','#15803d'],opacity:.88},
+    hovertemplate:'<b>%{x}</b><br>Margin: %{y:.1f}%<extra></extra>'}],scLay,CFG);
+
+  Plotly.newPlot('ch-scenario-cash',[{
+    x:['Base Case','Risk Case','Recovery Case'],y:[baseCashIn,riskCashIn,recoveryCashIn],type:'bar',
+    marker:{color:['#1d4ed8','#991b1b','#15803d'],opacity:.88},
+    hovertemplate:'<b>%{x}</b><br>Cash In: \u20ac%{y:,.0f}<extra></extra>'}],
+    Object.assign({},BASE,{height:295,margin:{t:6,r:20,b:46,l:60},
+      xaxis:{gridcolor:'transparent',tickfont:{size:11}},
+      yaxis:{tickformat:',.0f',gridcolor:'#f1f5f9',griddash:'dot',tickprefix:'\u20ac',tickfont:{size:10}}}),CFG);
+
+  /* Table */
+  document.getElementById('cnt-sc').textContent=ps.length+' projects';
+  document.getElementById('tbl-scenario').innerHTML=ps.map(function(p){
+    var baseFc=p.fc,baseMgP=(p.cv-baseFc)/p.cv*100;
+    var riskFc=p.status==='Delayed'?p.fc*1.10:p.fc,riskMgP=(p.cv-riskFc)/p.cv*100;
+    var recFc=p.overrun>0?p.cv+(p.overrun*0.5):p.fc,recMgP=(p.cv-recFc)/p.cv*100;
+    function mc(v){return v<0?'color:var(--red2);font-weight:600':v<10?'color:var(--amber2)':'color:var(--green2)';}
+    var isD=p.status==='Delayed';
+    return'<tr><td class="pid">'+p.id+'</td><td class="pname">'+p.name+'</td>'
+      +'<td><span class="sbg '+p.status.toLowerCase()+'">'+p.status+'</span></td>'
+      +'<td class="nr">'+fFull(baseFc)+'</td><td class="nr" style="'+mc(baseMgP)+'">'+baseMgP.toFixed(1)+'%</td>'
+      +'<td class="nr" style="color:'+(isD?'var(--red2)':'inherit')+'">'+fFull(riskFc)+'</td>'
+      +'<td class="nr" style="'+mc(riskMgP)+'">'+riskMgP.toFixed(1)+'%</td>'
+      +'<td class="nr" style="color:'+(p.overrun>0?'var(--green2)':'inherit')+'">'+fFull(recFc)+'</td>'
+      +'<td class="nr" style="'+mc(recMgP)+'">'+recMgP.toFixed(1)+'%</td></tr>';
+  }).join('');
+}
+
+/* ─── INIT ──────────────────────────────────────────── */
+compute();
+renderExec();
+rendered.exec=true;
+</script>
+</body>
+</html>
